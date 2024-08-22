@@ -124,7 +124,24 @@ projects_permission_url = df_projects['permissions'].to_list()
 
 project_permissions_download = []
 for download in projects_permission_url:
-    stuff = requests.get(download,headers=headers_get).json()
-    project_permissions_download.append(stuff)
+    stuff = requests.get(download, headers=headers_get).json()
+
+    data = stuff['permissions']
+    project_id = data['project']['id']
+
+    # Check if 'granteeCapabilities' exists and is a list with at least one item
+    #.get('group') used as some group id's are empty this handles such occasions.
+    if 'granteeCapabilities' in data and data['granteeCapabilities']:
+        group_id = data['granteeCapabilities'][0].get('group')
+    else:
+        group_id = None
+
+    # Only append if project_id is not None
+    if project_id:
+        ids = {
+            'id': project_id,
+            'group_id': group_id if group_id is not None else 'N/A'  # Use 'N/A' if group_id is None
+        }
+        project_permissions_download.append(ids)
 
 print(project_permissions_download)
