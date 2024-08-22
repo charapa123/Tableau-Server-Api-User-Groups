@@ -74,14 +74,46 @@ def get_rest(new_base_get,endpoint,current_page,pagination_url):
     return all_data
 
 r1 = get_rest(new_base_get,endpoint_groups,1,url_for_groups)
+r2 = get_rest(new_base_get,endpoint_projects,1,url_for_projects)
+r3 = get_rest(new_base_get,endpoint_workbooks,1,url_for_workbooks)
+r4 = get_rest(new_base_get,endpoint_views,1,url_for_views)
 
-# print(r1[0]['groups']['group'])
-# print(r1)
+# All data for groups endpoint
 
-data = []
+data_groups = []
 for sublist in r1:
-    data.append(pd.json_normalize(sublist['groups']['group']))
+    data_groups.append(pd.json_normalize(sublist['groups']['group']))
 
-df = pd.concat(data,ignore_index=True)
+df_groups = pd.concat(data_groups,ignore_index=True)
 
-print(df)
+print(df_groups)
+
+# All data for projects endpoint
+
+data_projects = []
+for sublist in r2:
+    data_projects.append(pd.json_normalize(sublist['projects']['project']))
+
+df_projects = pd.concat(data_projects,ignore_index=True)
+
+print(df_projects)
+
+# All data for workbooks endpoint
+
+data_workbooks = []
+for sublist in r3:
+    data_workbooks.append(pd.json_normalize(sublist['workbooks']['workbook']))
+
+df_workbook = pd.concat(data_workbooks,ignore_index=True)
+
+print(df_workbook)
+
+# All data for views endpoint
+
+data_views = []
+for sublist in r4:
+    data_views.append(pd.json_normalize(sublist['views']['view']))
+
+df_views = pd.concat(data_views,ignore_index=True)
+
+print(df_views)
