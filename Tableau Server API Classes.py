@@ -1,4 +1,5 @@
 import requests
+import pandas as pd
 
 class Credentials:
 
@@ -42,6 +43,8 @@ class Credentials:
         return
     
     def chosen_endpoint(self):
+        global all_data
+        global new_base_get
         # endpoints = ['workbooks','projects','groups','views']
         
         # endpoint_url = []
@@ -72,9 +75,19 @@ class Credentials:
 
         return all_data
     
-    
+    def permissions(self):
+        data = []
+        for sublist in all_data:
+            data.append(pd.json_normalize(sublist[f'{self.endpoint}'][f"{self.endpoint.rstrip('s')}"]))
 
-         
+        df_endpoint = pd.concat(data,ignore_index=True)
+
+        df_endpoint['permissions'] = df_endpoint['id'].apply(lambda x: f'{new_base_get}/{self.endpoint}/{x}/permissions')
+
+        projects_permission_url = df_endpoint['permissions'].to_list()
+
+        return projects_permission_url
+
 
 
     
@@ -83,4 +96,5 @@ stuff = Credentials('','','','','workbooks')
 
 
 print(stuff.setup())
-print(stuff.chosen_endpoint())
+stuff.chosen_endpoint()
+print(stuff.permissions())
