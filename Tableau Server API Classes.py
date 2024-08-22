@@ -86,7 +86,30 @@ class Credentials:
 
         projects_permission_url = df_endpoint['permissions'].to_list()
 
-        return projects_permission_url
+        project_permissions_download = []
+
+        for download in projects_permission_url:
+            stuff = requests.get(download, headers=headers_get).json()
+
+            data1 = stuff['permissions']
+            endpoint_id = data1[f"{self.endpoint.rstrip('s')}"]['id']
+
+            # Check if 'granteeCapabilities' exists and is a list with at least one item
+            #.get('group') used as some group id's are empty this handles such occasions.
+            if 'granteeCapabilities' in data1 and data1['granteeCapabilities']:
+                group_id = data1['granteeCapabilities'][0].get('group')
+            else:
+                group_id = None
+
+            # Only append if project_id is not None
+            if endpoint_id:
+                ids = {
+                    'id': endpoint_id,
+                    'group_id': group_id if group_id is not None else 'N/A'  # Use 'N/A' if group_id is None
+                }
+                project_permissions_download.append(ids)
+
+        return project_permissions_download
 
 
 
