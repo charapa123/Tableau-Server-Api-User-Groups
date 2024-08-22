@@ -3,12 +3,22 @@ import pandas as pd
 
 class Credentials:
 
+    token = None
+    site_id = None
+    headers_get = None
+    api = 'api/3.11/'
+
     def __init__(self,PATName,PATSecret,site,base_url,endpoint):
         self.PATName = PATName
         self.PATSecret = PATSecret
         self.site = site
         self.base_url = base_url
         self.endpoint = endpoint
+
+
+        # Run setup if the session hasn't been initialized yet
+        if not Credentials.token or not Credentials.site_id:
+            self.setup()
 
     def setup(self):
         global token
@@ -76,6 +86,7 @@ class Credentials:
         return all_data
     
     def permissions(self):
+        global stuff
         data = []
         for sublist in all_data:
             data.append(pd.json_normalize(sublist[f'{self.endpoint}'][f"{self.endpoint.rstrip('s')}"]))
@@ -86,13 +97,22 @@ class Credentials:
 
         projects_permission_url = df_endpoint['permissions'].to_list()
 
-        project_permissions_download = []
-
         for download in projects_permission_url:
-            stuff = requests.get(download, headers=headers_get).json()
+            stuff = pd.DataFrame(requests.get(download, headers=headers_get).json())
 
-            data1 = stuff['permissions']
-            endpoint_id = data1[f"{self.endpoint.rstrip('s')}"]['id']
+        return stuff
+    
+    def permissions_group(self):
+
+            # data1 = stuff['permissions']
+            # endpoint_id = data1[f"{self.endpoint.rstrip('s')}"]['id']
+
+            if 'permissions' in stuff:
+                data1 = stuff['permissions']
+                endpoint_id = data1.get(f"{self.endpoint.rstrip('s')}", {}).get('id', None)
+
+            project_permissions_download = []
+
 
             # Check if 'granteeCapabilities' exists and is a list with at least one item
             #.get('group') used as some group id's are empty this handles such occasions.
@@ -105,11 +125,18 @@ class Credentials:
             if endpoint_id:
                 ids = {
                     'id': endpoint_id,
-                    'group_id': group_id if group_id is not None else 'N/A'  # Use 'N/A' if group_id is None
+                    'group_id': group_id['id'] if group_id is not None else 'N/A'  # Use 'N/A' if group_id is None
                 }
                 project_permissions_download.append(ids)
 
-        return project_permissions_download
+            permissions_df = pd.DataFrame(project_permissions_download)
+
+            # endpoint_df = pd.DataFrame(stuff)
+
+            # endpoint_df_with_permissions = pd.merge(endpoint_df,permissions_df,'outer', right_on='id',left_on='id')
+
+            return permissions_df
+    #endpoint_df_with_permissions
 
 
 
@@ -117,7 +144,7 @@ class Credentials:
 
 stuff = Credentials('','','','','workbooks')
 
-
 print(stuff.setup())
 stuff.chosen_endpoint()
-print(stuff.permissions())
+stuff.permissions()
+print(stuff.permissions_group())
