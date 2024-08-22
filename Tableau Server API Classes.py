@@ -3,22 +3,12 @@ import pandas as pd
 
 class Credentials:
 
-    token = None
-    site_id = None
-    headers_get = None
-    api = 'api/3.11/'
-
     def __init__(self,PATName,PATSecret,site,base_url,endpoint):
         self.PATName = PATName
         self.PATSecret = PATSecret
         self.site = site
         self.base_url = base_url
         self.endpoint = endpoint
-
-
-        # Run setup if the session hasn't been initialized yet
-        if not Credentials.token or not Credentials.site_id:
-            self.setup()
 
     def setup(self):
         global token
@@ -87,64 +77,58 @@ class Credentials:
     
     def permissions(self):
         global stuff
+        global df_endpoint
         data = []
         for sublist in all_data:
             data.append(pd.json_normalize(sublist[f'{self.endpoint}'][f"{self.endpoint.rstrip('s')}"]))
 
-        df_endpoint = pd.concat(data,ignore_index=True)
+        df_endpoint = pd.concat(data, ignore_index=True)
 
         df_endpoint['permissions'] = df_endpoint['id'].apply(lambda x: f'{new_base_get}/{self.endpoint}/{x}/permissions')
 
         projects_permission_url = df_endpoint['permissions'].to_list()
 
+        # Initialize stuff as a list to store multiple permissions data
+        stuff = []
         for download in projects_permission_url:
-            stuff = pd.DataFrame(requests.get(download, headers=headers_get).json())
+            permissions_data = requests.get(download, headers=headers_get).json()
+            stuff.append(permissions_data)
 
         return stuff
-    
+
     def permissions_group(self):
+        project_permissions_download = []
 
-            # data1 = stuff['permissions']
-            # endpoint_id = data1[f"{self.endpoint.rstrip('s')}"]['id']
+        for permission_set in stuff:
+            if 'permissions' in permission_set:
+                data1 = permission_set['permissions']
 
-            if 'permissions' in stuff:
-                data1 = stuff['permissions']
                 endpoint_id = data1.get(f"{self.endpoint.rstrip('s')}", {}).get('id', None)
-
-            project_permissions_download = []
-
-
-            # Check if 'granteeCapabilities' exists and is a list with at least one item
-            #.get('group') used as some group id's are empty this handles such occasions.
-            if 'granteeCapabilities' in data1 and data1['granteeCapabilities']:
-                group_id = data1['granteeCapabilities'][0].get('group')
-            else:
                 group_id = None
 
-            # Only append if project_id is not None
-            if endpoint_id:
-                ids = {
-                    'id': endpoint_id,
-                    'group_id': group_id['id'] if group_id is not None else 'N/A'  # Use 'N/A' if group_id is None
-                }
-                project_permissions_download.append(ids)
+                if 'granteeCapabilities' in data1 and data1['granteeCapabilities']:
+                    group_id = data1['granteeCapabilities'][0].get('group')
 
-            permissions_df = pd.DataFrame(project_permissions_download)
+                if endpoint_id:
+                    ids = {
+                        'id': endpoint_id,
+                        'group_id': group_id['id'] if group_id is not None else 'N/A'
+                    }
+                    project_permissions_download.append(ids)
 
-            # endpoint_df = pd.DataFrame(stuff)
+        permissions_df = pd.DataFrame(project_permissions_download)
 
-            # endpoint_df_with_permissions = pd.merge(endpoint_df,permissions_df,'outer', right_on='id',left_on='id')
+        endpoint_df_with_permissions = pd.merge(df_endpoint,permissions_df,'outer', right_on='id',left_on='id')
 
-            return permissions_df
+        return endpoint_df_with_permissions
+
     #endpoint_df_with_permissions
 
 
 
-    
+what = Credentials('','','','','workbooks')
 
-stuff = Credentials('','','','','workbooks')
-
-print(stuff.setup())
-stuff.chosen_endpoint()
-stuff.permissions()
-print(stuff.permissions_group())
+print(what.setup())
+what.chosen_endpoint()
+what.permissions()
+print(what.permissions_group())
