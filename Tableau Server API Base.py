@@ -36,6 +36,7 @@ url_for_projects = f'{base_url}{api}sites/{site_id}/projects?includeUsageStatist
 url_for_groups = f'{base_url}{api}sites/{site_id}/groups?includeUsageStatistics=true&fields=_all_'
 url_for_views = f'{base_url}{api}sites/{site_id}/views?includeUsageStatistics=true&fields=_all_'
 
+
 headers_get = {
     'Accept': 'application/json',
     'X-Tableau-Auth' : token
@@ -116,4 +117,14 @@ for sublist in r4:
 
 df_views = pd.concat(data_views,ignore_index=True)
 
-print(df_views)
+df_projects['permissions'] = df_projects['id'].apply(lambda x: f'{new_base_get}/projects/{x}/permissions')
+
+projects_permission_url = df_projects['permissions'].to_list()
+
+
+project_permissions_download = []
+for download in projects_permission_url:
+    stuff = requests.get(download,headers=headers_get).json()
+    project_permissions_download.append(stuff)
+
+print(pd.json_normalize(project_permissions_download))
