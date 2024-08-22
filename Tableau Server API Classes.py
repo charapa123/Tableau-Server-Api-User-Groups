@@ -75,7 +75,7 @@ class Credentials:
         #this allows you to initialize the variables returned by the function to use seperately.
         current_page = page_number
 
-        while total_available >= page_size*current_page:
+        while total_available >= page_size*len(all_data):
             get = requests.get(new_base_get+'/'+self.endpoint+'?includeUsageStatistics=true&fields=_all_&pageNumber='+str(current_page),headers=headers_get).json()
             all_data.append(get)
             print(new_base_get+'/'+self.endpoint+'?includeUsageStatistics=true&fields=_all_&pageNumber='+str(current_page))
@@ -134,9 +134,27 @@ class Credentials:
 
 
 
-what = Credentials('','','','','workbooks')
-print(what.setup())
-# print(what.setup())
-what.chosen_endpoint()
-what.permissions()
-print(what.permissions_group())
+workbooks = Credentials('','','','','workbooks')
+projects = Credentials('','','','','projects')
+views = Credentials('','','','','views')
+groups = Credentials('','','','','groups')
+workbooks.setup()
+workbooks.chosen_endpoint()
+workbooks.permissions()
+
+# projects.setup()
+# projects.chosen_endpoint()
+# projects.permissions()
+# print(projects.permissions_group())
+
+# views.setup()
+# views.chosen_endpoint()
+# views.permissions()
+# views.permissions_group()
+
+# groups.setup()
+
+# print(pd.DataFrame(groups.chosen_endpoint()[0]['groups']))
+# groups.permissions()
+# groups.permissions_group()
+
