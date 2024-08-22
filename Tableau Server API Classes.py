@@ -1,20 +1,26 @@
 import requests
 import pandas as pd
+from datetime import datetime, timedelta
 
 class Credentials:
-
+    """
+    Input Tableau Server Credentails:
+    (Token Name,Token Secret,Site,Base URL,Endpoint e.g. workbooks,projects)"""
     def __init__(self,PATName,PATSecret,site,base_url,endpoint):
         self.PATName = PATName
         self.PATSecret = PATSecret
         self.site = site
         self.base_url = base_url
         self.endpoint = endpoint
+        
 
     def setup(self):
         global token
         global site_id
         global headers_get
         global api
+        global estimatedTimeToExpiration
+        global future_time
         body = f'''<tsRequest>
     <credentials
         personalAccessTokenName="{self.PATName}" personalAccessTokenSecret="{self.PATSecret}">
@@ -35,12 +41,14 @@ class Credentials:
 
         token = r['credentials']['token']
         site_id = r['credentials']['site']['id']
+        estimatedTimeToExpiration = r['credentials']['estimatedTimeToExpiration']
+        future_time = datetime.now() + timedelta(hours=int(estimatedTimeToExpiration.split(":")[0]), minutes=int(estimatedTimeToExpiration.split(":")[1]), seconds=int(estimatedTimeToExpiration.split(":")[2]))
 
         headers_get = {
     'Accept': 'application/json',
     'X-Tableau-Auth' : token
 }
-        return
+        return estimatedTimeToExpiration
     
     def chosen_endpoint(self):
         global all_data
@@ -127,8 +135,8 @@ class Credentials:
 
 
 what = Credentials('','','','','workbooks')
-
 print(what.setup())
+# print(what.setup())
 what.chosen_endpoint()
 what.permissions()
 print(what.permissions_group())
