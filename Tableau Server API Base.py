@@ -127,4 +127,4 @@ for download in projects_permission_url:
     stuff = requests.get(download,headers=headers_get).json()
     project_permissions_download.append(stuff)
 
-print(pd.json_normalize(project_permissions_download))
+print(project_permissions_download)
