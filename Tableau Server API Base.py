@@ -48,32 +48,26 @@ def get_page_diff_endpoint(url):
     page_size = int(r['pagination']['pageSize'])
     total_available = int(r['pagination']['totalAvailable'])
     return page_number,page_size,total_available
-#this allows you to initialize the variables returned by the function to use seperately.
-page_number, page_size, total_available = get_page_diff_endpoint(url_for_projects)
 
-print(page_number)
-
-# endpoint_workbooks = '/workbooks?includeUsageStatistics=true&fields=_all_&pageNumber='
-# endpoint_projects = '/groups?includeUsageStatistics=true&fields=_all_&pageNumber='
+endpoint_workbooks = '/workbooks?includeUsageStatistics=true&fields=_all_&pageNumber='
+endpoint_projects = '/groups?includeUsageStatistics=true&fields=_all_&pageNumber='
 
 
-# URL = requests.get(f'{base_url}/api/3.11/sites/9f1ee58e-b27c-4144-acb8-492c0c74cbab/workbooks?includeUsageStatistics=true&fields=_all_&pageNumber=2',headers=headers_get).json()
+
+new_base_get = f'{base_url}{api}sites/{site_id}'
 
 
-# # def get_rest(url_for_get_request,page_text,current_page):
+def get_rest(new_base_get,endpoint,current_page,pagination_url):
+    all_data = []
+    #this allows you to initialize the variables returned by the function to use seperately.
+    page_number, page_size, total_available = get_page_diff_endpoint(pagination_url)
+    current_page = page_number
 
-# new_base_get = f'{base_url}{api}sites/{site_id}'
+    while total_available >= page_size*current_page:
+        get = requests.get(new_base_get+endpoint+str(current_page),headers=headers_get).json()
+        all_data.append(get)
+        print(new_base_get+endpoint+str(current_page))
+        current_page +=1
+    return all_data
 
-
-# def get_rest(new_base_get,endpoint,current_page):
-#     all_data = []
-#     current_page = page_number
-
-#     while total_available >= page_size*current_page:
-#         get = requests.get(new_base_get+endpoint+str(current_page),headers=headers_get).json()
-#         all_data.append(get)
-#         print(new_base_get+endpoint+str(current_page))
-#         current_page +=1
-#     return all_data
-
-# print(get_rest(new_base_get,endpoint_projects,page_number))
+print(get_rest(new_base_get,endpoint_projects,1,url_for_projects))
