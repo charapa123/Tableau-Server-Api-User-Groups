@@ -33,7 +33,8 @@ site_id = r['credentials']['site']['id']
 
 url_for_workbooks = f'{base_url}{api}sites/{site_id}/workbooks?includeUsageStatistics=true&fields=_all_'
 url_for_projects = f'{base_url}{api}sites/{site_id}/projects?includeUsageStatistics=true&fields=_all_'
-page_text = '&pageNumber='
+url_for_groups = f'{base_url}{api}sites/{site_id}/groups?includeUsageStatistics=true&fields=_all_'
+url_for_views = f'{base_url}{api}sites/{site_id}/views?includeUsageStatistics=true&fields=_all_'
 
 headers_get = {
     'Accept': 'application/json',
@@ -50,7 +51,9 @@ def get_page_diff_endpoint(url):
     return page_number,page_size,total_available
 
 endpoint_workbooks = '/workbooks?includeUsageStatistics=true&fields=_all_&pageNumber='
-endpoint_projects = '/groups?includeUsageStatistics=true&fields=_all_&pageNumber='
+endpoint_projects = '/projects?includeUsageStatistics=true&fields=_all_&pageNumber='
+endpoint_groups = '/groups?includeUsageStatistics=true&fields=_all_&pageNumber='
+endpoint_views = '/views?includeUsageStatistics=true&fields=_all_&pageNumber='
 
 
 
@@ -70,4 +73,15 @@ def get_rest(new_base_get,endpoint,current_page,pagination_url):
         current_page +=1
     return all_data
 
-print(get_rest(new_base_get,endpoint_projects,1,url_for_projects))
+r1 = get_rest(new_base_get,endpoint_groups,1,url_for_groups)
+
+# print(r1[0]['groups']['group'])
+# print(r1)
+
+data = []
+for sublist in r1:
+    data.append(pd.json_normalize(sublist['groups']['group']))
+
+df = pd.concat(data,ignore_index=True)
+
+print(df)
