@@ -2,6 +2,10 @@ import requests
 import pandas as pd
 from datetime import datetime, timedelta
 
+#We first need to log in to our tableau server using the '/auth/signin' endpoint of the API
+#* Note
+#Token expires after 6 months download workflow and replace Token with one you have created
+
 class Credentials:
     """
     Input Tableau Server Credentails:
@@ -21,6 +25,7 @@ class Credentials:
         global api
         global estimatedTimeToExpiration
         global future_time
+        #We make the relevant xml in a formula tool as a field and send it as the payload with the download tool
         body = f'''<tsRequest>
     <credentials
         personalAccessTokenName="{self.PATName}" personalAccessTokenSecret="{self.PATSecret}">
@@ -43,6 +48,7 @@ class Credentials:
         site_id = r['credentials']['site']['id']
         estimatedTimeToExpiration = r['credentials']['estimatedTimeToExpiration']
         future_time = datetime.now() + timedelta(hours=int(estimatedTimeToExpiration.split(":")[0]), minutes=int(estimatedTimeToExpiration.split(":")[1]), seconds=int(estimatedTimeToExpiration.split(":")[2]))
+        #If we've signed in, we get a connection token to use with future calls along with a site-id from the reponses (more xml). We rename the token 'X-Tableau-Auth'
 
         headers_get = {
     'Accept': 'application/json',
@@ -54,13 +60,8 @@ class Credentials:
         global all_data
         global new_base_get
         global df_endpoint
-        # endpoints = ['workbooks','projects','groups','views']
-        
-        # endpoint_url = []
-        # for item in endpoints:
-        #     url = f'{self.base_url}{api}sites/{site_id}/{item}?includeUsageStatistics=true&fields=_all_'
-        #     endpoint_url.append(url)
-
+        #We can attach this token as a header (along with Accept: application/json) and go to a different endpoint to get information about views,Workbooks,Groups,Projects on our Tableau Server
+        #this is the endpoint to get pagination details
         endpoint_url = f'{self.base_url}{api}sites/{site_id}/{self.endpoint}?includeUsageStatistics=true&fields=_all_'
 
 
@@ -73,15 +74,14 @@ class Credentials:
 
 
         all_data = []
-        #this allows you to initialize the variables returned by the function to use seperately.
         current_page = page_number
-
+        #downloading all data available 
         while total_available >= page_size*len(all_data):
             get = requests.get(new_base_get+'/'+self.endpoint+'?includeUsageStatistics=true&fields=_all_&pageNumber='+str(current_page),headers=headers_get).json()
             all_data.append(get)
             print(new_base_get+'/'+self.endpoint+'?includeUsageStatistics=true&fields=_all_&pageNumber='+str(current_page))
             current_page +=1 
-
+            #parsing out as we are only interested in our endpoint response
             data = []
             for sublist in all_data:
                 data.append(pd.json_normalize(sublist[f'{self.endpoint}'][f"{self.endpoint.rstrip('s')}"]))
@@ -92,7 +92,8 @@ class Credentials:
     
     def permissions(self):
         global stuff
-
+        #chosen_endpoint function downloads the initial data which provides us with an Id which can then be used in a second download to query permissions
+        #Second download for permissions, need to get original fields to create permission URL and use id field from initial download. header Accept: application/json as XML is more inconsistent.
         df_endpoint['permissions'] = df_endpoint['id'].apply(lambda x: f'{new_base_get}/{self.endpoint}/{x}/permissions')
 
         projects_permission_url = df_endpoint['permissions'].to_list()
@@ -107,7 +108,7 @@ class Credentials:
 
     def permissions_group(self):
         project_permissions_download = []
-
+        #Parse out Json and get group id information showing which groups have access. Then Summarise the important fields so group id (rename to which stream it is coming from so here workbooks so rename to workbook group id.
         for permission_set in stuff:
             if 'permissions' in permission_set:
                 data1 = permission_set['permissions']
@@ -134,7 +135,7 @@ class Credentials:
     #endpoint_df_with_permissions
 
 
-
+# creating our dataframes and removing where we have no groups specified
 workbooks = Credentials('','','','','workbooks')
 projects = Credentials('','','','','projects')
 views = Credentials('','','','','views')
@@ -175,13 +176,13 @@ groups.setup()
 df_groups = groups.chosen_endpoint()
 
 
-
+#Views join to workbooks on workbook id
 df_part_1 = pd.merge(df_views,df_workbook,'inner',right_on=['Workbook_id','project.id'],left_on=['workbook.id','project.id'])
-
+#join our workbooks/views to projects on project id,some workbooks are not in projects so union these workbooks back on to our main data stream
 df_part_2 = pd.merge(df_part_1,df_projects,'outer',left_on='project.id',right_on='project_id')
-
+#Transpose, our group id's for views,workbooks,projects this is because not all project groups will have access to all workbooks in the project so they won't join.
 df_part_3 = pd.melt(df_part_2,id_vars=['view_name','project_name','Workbook_name','project_id'])
-
+#Join our id field from groups to the id's from our transposed group id's this is so we can bring in the names of the groups.
 df_Final = pd.merge(df_groups,df_part_3,'outer',left_on='id',right_on='value')
 
 
