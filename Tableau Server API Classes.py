@@ -53,6 +53,7 @@ class Credentials:
     def chosen_endpoint(self):
         global all_data
         global new_base_get
+        global df_endpoint
         # endpoints = ['workbooks','projects','groups','views']
         
         # endpoint_url = []
@@ -79,18 +80,18 @@ class Credentials:
             get = requests.get(new_base_get+'/'+self.endpoint+'?includeUsageStatistics=true&fields=_all_&pageNumber='+str(current_page),headers=headers_get).json()
             all_data.append(get)
             print(new_base_get+'/'+self.endpoint+'?includeUsageStatistics=true&fields=_all_&pageNumber='+str(current_page))
-            current_page +=1  
+            current_page +=1 
 
-        return all_data
+            data = []
+            for sublist in all_data:
+                data.append(pd.json_normalize(sublist[f'{self.endpoint}'][f"{self.endpoint.rstrip('s')}"]))
+
+        df_endpoint = pd.concat(data, ignore_index=True)
+
+        return df_endpoint
     
     def permissions(self):
         global stuff
-        global df_endpoint
-        data = []
-        for sublist in all_data:
-            data.append(pd.json_normalize(sublist[f'{self.endpoint}'][f"{self.endpoint.rstrip('s')}"]))
-
-        df_endpoint = pd.concat(data, ignore_index=True)
 
         df_endpoint['permissions'] = df_endpoint['id'].apply(lambda x: f'{new_base_get}/{self.endpoint}/{x}/permissions')
 
@@ -138,23 +139,46 @@ workbooks = Credentials('','','','','workbooks')
 projects = Credentials('','','','','projects')
 views = Credentials('','','','','views')
 groups = Credentials('','','','','groups')
-workbooks.setup()
-workbooks.chosen_endpoint()
-workbooks.permissions()
+# workbooks.setup()
+# workbooks.chosen_endpoint()
+# workbooks.permissions()
+
+# df_workbook = workbooks.permissions_group()
+
+# df_workbook = df_workbook[['id','name','project.id','group_id']].rename(columns = {'id' :'Workbook_id','name':'Workbook_name'})
+
+# df_workbook = df_workbook[df_workbook['group_id'] != 'N/A']
+
 
 # projects.setup()
 # projects.chosen_endpoint()
 # projects.permissions()
-# print(projects.permissions_group())
+# df_projects = projects.permissions_group()
+
+
+# df_projects = df_projects[['id','name','group_id']].rename(columns = {'id' :'project_id','name':'project_name'})
+
+# df_projects = df_projects[df_projects['group_id'] != 'N/A']
+
 
 # views.setup()
 # views.chosen_endpoint()
 # views.permissions()
-# views.permissions_group()
+# df_views = views.permissions_group()
+
+
+# df_views = df_views[['id','name','group_id','workbook.id','project.id']].rename(columns = {'id' :'view_id','name':'view_name','group_id':'view_group_id'})
+
+# df_views = df_views[df_views['group_id'] != 'N/A']
 
 # groups.setup()
 
-# print(pd.DataFrame(groups.chosen_endpoint()[0]['groups']))
-# groups.permissions()
-# groups.permissions_group()
+groups.setup()
+print(groups.chosen_endpoint())
+
+projects.setup()
+print(projects.chosen_endpoint())
+
+
+
 
