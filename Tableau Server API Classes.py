@@ -139,45 +139,53 @@ workbooks = Credentials('','','','','workbooks')
 projects = Credentials('','','','','projects')
 views = Credentials('','','','','views')
 groups = Credentials('','','','','groups')
-# workbooks.setup()
-# workbooks.chosen_endpoint()
-# workbooks.permissions()
+workbooks.setup()
+workbooks.chosen_endpoint()
+workbooks.permissions()
 
-# df_workbook = workbooks.permissions_group()
+df_workbook = workbooks.permissions_group()
 
-# df_workbook = df_workbook[['id','name','project.id','group_id']].rename(columns = {'id' :'Workbook_id','name':'Workbook_name'})
+df_workbook = df_workbook[['id','name','project.id','group_id']].rename(columns = {'id' :'Workbook_id','name':'Workbook_name','group_id':'Workbook_group_id'})
 
-# df_workbook = df_workbook[df_workbook['group_id'] != 'N/A']
-
-
-# projects.setup()
-# projects.chosen_endpoint()
-# projects.permissions()
-# df_projects = projects.permissions_group()
-
-
-# df_projects = df_projects[['id','name','group_id']].rename(columns = {'id' :'project_id','name':'project_name'})
-
-# df_projects = df_projects[df_projects['group_id'] != 'N/A']
-
-
-# views.setup()
-# views.chosen_endpoint()
-# views.permissions()
-# df_views = views.permissions_group()
-
-
-# df_views = df_views[['id','name','group_id','workbook.id','project.id']].rename(columns = {'id' :'view_id','name':'view_name','group_id':'view_group_id'})
-
-# df_views = df_views[df_views['group_id'] != 'N/A']
-
-# groups.setup()
-
-groups.setup()
-print(groups.chosen_endpoint())
+df_workbook = df_workbook[df_workbook['Workbook_group_id'] != 'N/A']
 
 projects.setup()
-print(projects.chosen_endpoint())
+projects.chosen_endpoint()
+projects.permissions()
+df_projects = projects.permissions_group()
+
+
+
+df_projects = df_projects[['id','name','group_id']].rename(columns = {'id' :'project_id','name':'project_name','group_id':'projects_group_id'})
+
+df_projects = df_projects[df_projects['projects_group_id'] != 'N/A']
+
+
+views.setup()
+views.chosen_endpoint()
+views.permissions()
+df_views = views.permissions_group()
+
+
+df_views = df_views[['name','group_id','workbook.id','project.id']].rename(columns = {'name':'view_name','group_id':'view_group_id'})
+
+df_views = df_views[df_views['view_group_id'] != 'N/A']
+
+groups.setup()
+df_groups = groups.chosen_endpoint()
+
+
+
+df_part_1 = pd.merge(df_views,df_workbook,'inner',right_on=['Workbook_id','project.id'],left_on=['workbook.id','project.id'])
+
+df_part_2 = pd.merge(df_part_1,df_projects,'outer',left_on='project.id',right_on='project_id')
+
+df_part_3 = pd.melt(df_part_2,id_vars=['view_name','project_name','Workbook_name','project_id'])
+
+df_Final = pd.merge(df_groups,df_part_3,'outer',left_on='id',right_on='value')
+
+
+
 
 
 
