@@ -1,6 +1,6 @@
 import requests
 
-class credentials:
+class Credentials:
 
     def __init__(self,PATName,PATSecret,site,base_url,endpoint):
         self.PATName = PATName
@@ -9,7 +9,11 @@ class credentials:
         self.base_url = base_url
         self.endpoint = endpoint
 
-    def user(self):
+    def setup(self):
+        global token
+        global site_id
+        global headers_get
+        global api
         body = f'''<tsRequest>
     <credentials
         personalAccessTokenName="{self.PATName}" personalAccessTokenSecret="{self.PATSecret}">
@@ -35,6 +39,9 @@ class credentials:
     'Accept': 'application/json',
     'X-Tableau-Auth' : token
 }
+        return
+    
+    def chosen_endpoint(self):
         # endpoints = ['workbooks','projects','groups','views']
         
         # endpoint_url = []
@@ -72,33 +79,8 @@ class credentials:
 
     
 
-credentials('PATName', 'PATSecret', 'site', 'base_url','endpoint')
+stuff = Credentials('','','','','workbooks')
 
 
-print(stuff.user())
-
-
-
-
-
-
-# class anime:
-
-#     def __init__(self,genre,title,year,rating):
-#         self.g = genre
-#         self.t = title
-#         self.y = year
-#         self.r = rating
-
-#     def good(self):
-#         print(f'{self.t} is good')
-
-#     def bad(self):
-#         print(f'{self.g} is bad')
-
-
-# anime_1 = anime('romance','Fruits Basket',2023,10)
-
-# anime_1.good()
-
-# print(anime_1.t)
+print(stuff.setup())
+print(stuff.chosen_endpoint())
